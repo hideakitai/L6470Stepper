@@ -29,7 +29,7 @@ typedef struct {
 	uint32_t mask;
 } _L6470AppCmdTable;
 
-const static _L6470AppCmdTable L6470AppCmdTable[] = 
+const static _L6470AppCmdTable L6470AppCmdTable[] =
 {
 	// cmd, size of data (bytes), bitmask
 	{0x00, 0x00, 0x000000},	// NOP
@@ -50,7 +50,7 @@ const static _L6470AppCmdTable L6470AppCmdTable[] =
 	{0xB8, 0x00, 0x000000},	// HARDSTOP
 	{0xA0, 0x00, 0x000000},	// SOFTHIZ
 	{0xA8, 0x00, 0x000000},	// HARDHIZ
-	{0xD0, 0x00, 0x000000}	// GETSTATUS
+	{0xD0, 0x01, 0x000000}	// GETSTATUS
 };
 
 
@@ -63,7 +63,7 @@ typedef struct  {
 	uint32_t mask;
 } _L6470RegTable;
 
-static const _L6470RegTable L6470RegTable[] = 
+static const _L6470RegTable L6470RegTable[] =
 {
 	// cmd, size of data (bytes), bitmask
 	{0x00, 0x00, 0x000000},	// NOP,
@@ -94,7 +94,7 @@ static const _L6470RegTable L6470RegTable[] =
 	{0x19, 0x02, 0x00FFFF}	// R  REG_STATUS
 };
 
-static const _L6470RegTable L6480RegTable[] = 
+static const _L6470RegTable L6480RegTable[] =
 {
 	// cmd, size of data (bytes), bitmask
 	{0x00, 0x00, 0x000000},	//    REG_NOP

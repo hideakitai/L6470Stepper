@@ -60,9 +60,11 @@ void	L6470Stepper::angle(int degree)
 
 void	L6470Stepper::setAngle(int degree, int id)
 {
-	if(id >= getDaisyChainNum())
-		return;
-	_motor[id].setAction(GOTO, degree);
+    if(id >= getDaisyChainNum())
+        return;
+    static int pre_degree = 0;
+    _motor[id].setAction(GOTO_DIR, degree, ((degree >= pre_degree) ? 1 : 0));
+    pre_degree = degree;
 }
 
 void	L6470Stepper::step(int steps)
@@ -102,6 +104,15 @@ void	L6470Stepper::setRotate(motorDirection dir, int id, int rps)
 	_motor[id].setAction(RUN, abs(rps), dir);
 }
 
+void 	L6470Stepper::setStepClockMode(_motorDirection dir, int id)
+{
+	if(id >= getDaisyChainNum())
+        return;
+	// Serial.println("stepclockmode!!!");
+    _motor[id].setAction(STEPCLOCK, dir);
+	transferAction();
+}
+
 void L6470Stepper::setRps(int rps)
 {
 	for (int i=0; i<getDaisyChainNum(); i++) {
@@ -117,13 +128,13 @@ void L6470Stepper::setRps(int rps, int id)
 	_motor[id].setRegister(REG_MAX_SPEED, rps);
 }
 
-int& L6470Stepper::readRegister(int reg)
+int L6470Stepper::readRegister(int reg, int motor_id)
 {
 	for (int i=0; i<getDaisyChainNum(); i++) {
 		requestRegister(reg, i);
 	}
 	transferRegister();
-	return *(_readData);
+	return _readData[motor_id];
 }
 
 void L6470Stepper::requestRegister(int reg, int id)
@@ -175,7 +186,7 @@ void L6470Stepper::transferRegister()
 	int startByte = SPI_VAL_MAXSIZE-_spiData->getSize();
 	for (int i=startByte; i<SPI_VAL_MAXSIZE; i++) {
 		byte* readBytes;
-		readBytes = transferDaisyChain(_spiData->getVal(i));	// get pointer, read data comes from MSB
+		readBytes = (byte*)transferDaisyChain(_spiData->getVal(i));	// get pointer, read data comes from MSB
 		for (int j=0; j<getDaisyChainNum(); j++) {
 			readUnion[j].bval[SPI_VAL_MAXSIZE-1-i] = readBytes[j];
 		}
@@ -239,7 +250,7 @@ void	L6470Stepper::setStepEnable(int pinSTEP)
 	useStep = true;
 }
 
-byte	L6470Stepper::isBusy()
+boolean	L6470Stepper::isBusy()
 {
 	// todo: faster one
 	// todo: status register has the mirror
@@ -277,4 +288,3 @@ void L6480Stepper::setup(registerStruct* regParamList, int size, int id)
 		initRegister(regParamList, size, id);
 	}
 }
-

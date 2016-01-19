@@ -68,5 +68,3 @@ inline void SPIDaisyChain::riseCSPORTB()
 {
 	PORTB |= _BV(_pinCS);
 }
-
-

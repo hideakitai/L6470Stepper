@@ -12,8 +12,8 @@
 #include "L6470InitRegParam.h"
 
 typedef union {
-	byte	bval[4];
-	int		ival;
+	byte		bval[4];
+	uint32_t	ival;
 } _readUnion;
 
 class L6470Stepper : public SPIDaisyChain
@@ -35,6 +35,7 @@ public:
 	void	setAngle(int degree, int id);
 	void	setStep(int steps, int id);
 	void	setRotate(motorDirection dir, int id, int rps = 0);
+	void 	setStepClockMode(_motorDirection dir, int id = 0);
 
 	// set speed
 	void	setRps(int rps);
@@ -45,7 +46,7 @@ public:
 	void	execute();
 
 	// read register value from L6470
-	int&	readRegister(int reg);
+	int		readRegister(int reg, int motor_id = 0);
 	void	requestRegister(int reg, int id);
 
 	// optional
