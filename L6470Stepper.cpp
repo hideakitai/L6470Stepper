@@ -134,32 +134,32 @@ float L6470Stepper::stepToAngle(long step, int motor_id)
 
 void L6470Stepper::stepClock(float abs_angle, float ms, int motor_id)
 {
-	float curr_angle = getCurrAngle();
-	float next_angle = abs_angle - curr_angle;
-	_motorDirection dir = (next_angle - curr_angle < 0) ? CCW : CW;
+	long curr_step = getCurrStep();
+	long diff_step = angleToStep(abs_angle) - curr_step;
+	_motorDirection dir = (diff_step < 0) ? CCW : CW;
 
-	// long curr_step = getCurrStep();
-	// long next_step = angleToStep(abs_angle);
-	// long diff_step = next_step - curr_step;
-	// _motorDirection direction = (diff_step < 0) ? CCW : CW;
-	// diff_step = abs(diff_step);
-
-	stepClock(angleToStep(next_angle - curr_angle), dir, ms, motor_id);
+	stepClock(abs(diff_step), dir, ms, motor_id);
 }
 
 void L6470Stepper::stepClock(long step, _motorDirection dir, float ms, int motor_id)
 {
-	// noTone(_pinSTEP);
-	// delay(100);
 	setStepClockMode(dir, motor_id);
-	// delay(100);
 	unsigned int hz = 0;
 	if (ms <= 0) {
 		hz = 0xFFFF; // numeric_limits<int>::max() 16bit
+		tone(_pinSTEP, hz);
 	} else {
 		hz = (unsigned int)getHzFrom(step, ms);
+		if (hz > 65535) {
+			Serial.print("Too High Frequency !! : "); Serial.println(hz);
+			hz = 65535;
+		} else if (hz < 31) {
+			Serial.print("Too Low Frequency !! : "); Serial.println(hz);
+			hz = 31;
+		}
+		// Serial.print("frequency is : "); Serial.println(hz);
+		tone(_pinSTEP, hz, ms);
 	}
-	tone(_pinSTEP, hz);
 }
 
 long L6470Stepper::getHzFrom(long steps, float ms)
