@@ -37,14 +37,14 @@ public:
 	void	setRotate(motorDirection dir, int id, int rps = 0);
 	void 	setStepClockMode(_motorDirection dir, int id = 0);
 
-	float	angleToStep(long step);
-	long	stepToAngle(float angle);
-	void 	stepClock(float angle, float duration);
-	void 	stepClock(int step, float duration);
+	long	angleToStep(float angle, int motor_id = 0);
+	float	stepToAngle(long step, int motor_id = 0);
+	void 	stepClock(float abs_angle, float ms = 0., int motor_id = 0);
+	void 	stepClock(long step, _motorDirection dir, float ms = 0., int motor_id = 0);
 
-	void 	stepClock(unsigned int step, _motorDirection dir);
+	long 	getHzFrom(long steps, float ms);
 
-	void 	stepPulse(unsigned int step);
+	// void 	stepPulse(unsigned int step);
 
 	// set speed
 	void	setRps(int rps);
@@ -57,6 +57,9 @@ public:
 	// read register value from L6470
 	long	readRegister(int reg, int motor_id = 0);
 	void	requestRegister(int reg, int id);
+
+	long 	getCurrStep(int motor_id = 0);
+	float 	getCurrAngle(int motor_id = 0);
 
 	// optional
 	void	setBusyEnable(int pinBUSY);

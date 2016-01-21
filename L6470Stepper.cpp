@@ -114,9 +114,60 @@ void 	L6470Stepper::setStepClockMode(_motorDirection dir, int id)
 {
 	if(id >= getDaisyChainNum())
         return;
-	// Serial.println("stepclockmode!!!");
-    _motor[id].setAction(STEPCLOCK, dir);
+    _motor[id].setAction(STEPCLOCK, 0, dir);
 	transferAction();
+}
+
+
+long L6470Stepper::angleToStep(float angle, int motor_id)
+{
+	long steps = (uint32_t)((double)_motor[motor_id].getMotorStep() * (double)pow(2, _motor[motor_id].getMicroStep()) * (double)angle / 360.0);
+	return steps;
+}
+
+float L6470Stepper::stepToAngle(long step, int motor_id)
+{
+	unsigned long all_steps = (unsigned long)((double)_motor[motor_id].getMotorStep() * (double)pow(2, _motor[motor_id].getMicroStep()));
+	float angle = 360. * step / all_steps;
+	return angle;
+}
+
+void L6470Stepper::stepClock(float abs_angle, float ms, int motor_id)
+{
+	float curr_angle = getCurrAngle();
+	float next_angle = abs_angle - curr_angle;
+	_motorDirection dir = (next_angle - curr_angle < 0) ? CCW : CW;
+
+	// long curr_step = getCurrStep();
+	// long next_step = angleToStep(abs_angle);
+	// long diff_step = next_step - curr_step;
+	// _motorDirection direction = (diff_step < 0) ? CCW : CW;
+	// diff_step = abs(diff_step);
+
+	stepClock(angleToStep(next_angle - curr_angle), dir, ms, motor_id);
+}
+
+void L6470Stepper::stepClock(long step, _motorDirection dir, float ms, int motor_id)
+{
+	// noTone(_pinSTEP);
+	// delay(100);
+	setStepClockMode(dir, motor_id);
+	// delay(100);
+	unsigned int hz = 0;
+	if (ms <= 0) {
+		hz = 0xFFFF; // numeric_limits<int>::max() 16bit
+	} else {
+		hz = (unsigned int)getHzFrom(step, ms);
+	}
+	tone(_pinSTEP, hz);
+}
+
+long L6470Stepper::getHzFrom(long steps, float ms)
+{
+	if (ms <= 0) {
+		return 0;
+	}
+	return (long)(1. / ((double)ms / 1000. / (double)steps));
 }
 
 void L6470Stepper::setRps(int rps)
@@ -150,8 +201,8 @@ long L6470Stepper::readRegister(int reg, int motor_id)
 		} else {
 			ret = (long)(-1) * (long)(0x200000 - val);
 		}
-		Serial.print("sign : "); Serial.println(sign, HEX);
-		Serial.print("value: "); Serial.println(val, HEX);
+		// Serial.print("sign : "); Serial.println(sign, HEX);
+		// Serial.print("value: "); Serial.println(val, HEX);
 	} else {
 		ret = (long)_readData[motor_id];
 	}
@@ -164,6 +215,19 @@ void L6470Stepper::requestRegister(int reg, int id)
 		return;
 	_motor[id].requestRegister(reg);
 }
+
+long L6470Stepper::getCurrStep(int motor_id)
+{
+	long step = readRegister(REG_ABS_POS, motor_id);
+	return step;
+}
+
+float 	L6470Stepper::getCurrAngle(int motor_id)
+{
+	long step = getCurrStep();
+	return stepToAngle(step);
+}
+
 
 void L6470Stepper::execute()
 {
@@ -210,7 +274,7 @@ void L6470Stepper::transferRegister()
 		// readUnion[i].ival = 0;
 	}
 
-	Serial.println("Send Command: ");
+	// Serial.println("Send Command: ");
 	transferDaisyChain(_spiData->getCmd());
 	int startByte = SPI_VAL_MAXSIZE-_spiData->getSize();
 	for (int i=0; i<SPI_VAL_MAXSIZE; i++) {
@@ -219,27 +283,27 @@ void L6470Stepper::transferRegister()
 				readUnion[j].bval[SPI_VAL_MAXSIZE-1-i] = 0;
 			}
 		} else {
-			Serial.println("Send Data and Read Register: ");
+			// Serial.println("Send Data and Read Register: ");
 			byte* readBytes;
 			readBytes = (byte*)transferDaisyChain(_spiData->getVal(i));	// get pointer, read data comes from MSB
 			for (int j=0; j<getDaisyChainNum(); j++) {
-				Serial.println("Got Data: ");
+				// Serial.println("Got Data: ");
 				readUnion[j].bval[SPI_VAL_MAXSIZE-1-i] = readBytes[j];
-				Serial.println(readBytes[j], HEX);
-				Serial.println(readUnion[j].bval[SPI_VAL_MAXSIZE-1-i], HEX);
+				// Serial.println(readBytes[j], HEX);
+				// Serial.println(readUnion[j].bval[SPI_VAL_MAXSIZE-1-i], HEX);
 			}
 		}
 	}
 
 	// copy data to array
-	Serial.println("final data: ");
+	// Serial.println("final data: ");
 	for (int i=0; i<getDaisyChainNum(); i++) {
 		_readData[i] = readUnion[i].ival;
-		for (size_t j = 0; j < 4; j++) {
-			Serial.print(readUnion[i].bval[j], HEX); Serial.print(" ");
-		}
-		Serial.print("int: "); Serial.println(readUnion[i].ival, HEX);
-		Serial.print("int: "); Serial.println(_readData[i], HEX);
+		// for (size_t j = 0; j < 4; j++) {
+		// 	Serial.print(readUnion[i].bval[j], HEX); Serial.print(" ");
+		// }
+		// Serial.print("int: "); Serial.println(readUnion[i].ival, HEX);
+		// Serial.print("int: "); Serial.println(_readData[i], HEX);
 	}
 }
 
