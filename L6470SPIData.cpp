@@ -74,4 +74,3 @@ void L6470SpiData::updateAsRegCmd(L6470MotorData* motor)
 		motor[i].clearReg();
 	}
 }
-

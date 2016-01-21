@@ -6,7 +6,11 @@ L6470Stepper::L6470Stepper(int pinCS, int nDaisyChain, int* motorSteps)
 {
 	_spiData = new L6470SpiData(nDaisyChain);
 	_motor = new L6470MotorData[nDaisyChain];
-	_readData = new int[nDaisyChain];
+	_readData = new uint32_t[nDaisyChain];
+
+	for (size_t i = 0; i < nDaisyChain; i++) {
+		_readData[i] = 0;
+	}
 
 	// pin settings
 	_pinBUSY = 0xFF;	// NOT USE, default
@@ -94,6 +98,8 @@ void	L6470Stepper::rotate(motorDirection dir, int rps)
 	transferAction();
 }
 
+
+
 void	L6470Stepper::setRotate(motorDirection dir, int id, int rps)
 {
 	if(id >= getDaisyChainNum())
@@ -128,13 +134,28 @@ void L6470Stepper::setRps(int rps, int id)
 	_motor[id].setRegister(REG_MAX_SPEED, rps);
 }
 
-int L6470Stepper::readRegister(int reg, int motor_id)
+long L6470Stepper::readRegister(int reg, int motor_id)
 {
 	for (int i=0; i<getDaisyChainNum(); i++) {
 		requestRegister(reg, i);
 	}
 	transferRegister();
-	return _readData[motor_id];
+
+	long ret = 0;
+	if (reg == REG_ABS_POS) {
+		long sign = ((_readData[motor_id] & 0x200000) >> 21);
+		long val = (_readData[motor_id] & 0x1FFFFF);
+		if (sign == 0) {
+			ret = (long)val;
+		} else {
+			ret = (long)(-1) * (long)(0x200000 - val);
+		}
+		Serial.print("sign : "); Serial.println(sign, HEX);
+		Serial.print("value: "); Serial.println(val, HEX);
+	} else {
+		ret = (long)_readData[motor_id];
+	}
+	return ret;
 }
 
 void L6470Stepper::requestRegister(int reg, int id)
@@ -182,19 +203,43 @@ void L6470Stepper::transferRegister()
 	_readUnion readUnion[getDaisyChainNum()];
 	_spiData->updateAsRegCmd(_motor);
 
+	for (size_t i = 0; i < getDaisyChainNum(); i++) {
+		for (size_t j = 0; j < 4; j++) {
+			readUnion[i].bval[j] = 0;
+		}
+		// readUnion[i].ival = 0;
+	}
+
+	Serial.println("Send Command: ");
 	transferDaisyChain(_spiData->getCmd());
 	int startByte = SPI_VAL_MAXSIZE-_spiData->getSize();
-	for (int i=startByte; i<SPI_VAL_MAXSIZE; i++) {
-		byte* readBytes;
-		readBytes = (byte*)transferDaisyChain(_spiData->getVal(i));	// get pointer, read data comes from MSB
-		for (int j=0; j<getDaisyChainNum(); j++) {
-			readUnion[j].bval[SPI_VAL_MAXSIZE-1-i] = readBytes[j];
+	for (int i=0; i<SPI_VAL_MAXSIZE; i++) {
+		if (i < startByte) {
+			for (size_t j = 0; j < getDaisyChainNum(); j++) {
+				readUnion[j].bval[SPI_VAL_MAXSIZE-1-i] = 0;
+			}
+		} else {
+			Serial.println("Send Data and Read Register: ");
+			byte* readBytes;
+			readBytes = (byte*)transferDaisyChain(_spiData->getVal(i));	// get pointer, read data comes from MSB
+			for (int j=0; j<getDaisyChainNum(); j++) {
+				Serial.println("Got Data: ");
+				readUnion[j].bval[SPI_VAL_MAXSIZE-1-i] = readBytes[j];
+				Serial.println(readBytes[j], HEX);
+				Serial.println(readUnion[j].bval[SPI_VAL_MAXSIZE-1-i], HEX);
+			}
 		}
 	}
 
 	// copy data to array
+	Serial.println("final data: ");
 	for (int i=0; i<getDaisyChainNum(); i++) {
 		_readData[i] = readUnion[i].ival;
+		for (size_t j = 0; j < 4; j++) {
+			Serial.print(readUnion[i].bval[j], HEX); Serial.print(" ");
+		}
+		Serial.print("int: "); Serial.println(readUnion[i].ival, HEX);
+		Serial.print("int: "); Serial.println(_readData[i], HEX);
 	}
 }
 
