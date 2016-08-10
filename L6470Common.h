@@ -26,7 +26,7 @@ enum AppCmdList
 	HARDSTOP,
 	SOFTHIZ,
 	HARDHIZ,
-	GETSTATUS	
+	GETSTATUS
 };
 
 

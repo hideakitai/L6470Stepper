@@ -31,6 +31,22 @@ public:
 	void	step(int steps);
 	void	rotate(motorDirection dir, int rps = 0);
 
+	void    run(bool cwccw, int rps);
+	// void    stepClock(bool cwccw);
+    void    move(bool cwccw, int steps);
+    void    goTo(bool angle, int rps);
+    void    goToDir(bool cwccw, int angle, int rps);
+    void    goUntil(bool act, bool cwccw, int rps);
+    void    goMark();
+    void    resetPos();
+    void    resetDevice();
+    void    softStop();
+    void    hardStop();
+    void    softHiZ();
+    void    hardHiZ();
+
+	void    setAppCmd(AppCmdList app);
+
 	// individual motor action
 	void	setAngle(int degree, int id);
 	void	setStep(int steps, int id);

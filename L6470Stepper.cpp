@@ -98,7 +98,79 @@ void	L6470Stepper::rotate(motorDirection dir, int rps)
 	transferAction();
 }
 
+void L6470Stepper::run(bool cwccw, int rps)
+{
 
+}
+
+// void L6470Stepper::stepClock(bool cwccw)
+// {
+//
+// }
+
+void L6470Stepper::move(bool cwccw, int steps)
+{
+
+}
+void L6470Stepper::goTo(bool angle, int rps)
+{
+
+}
+
+void L6470Stepper::goToDir(bool cwccw, int angle, int rps)
+{
+
+}
+
+void L6470Stepper::goUntil(bool act, bool cwccw, int rps)
+{
+
+}
+
+void L6470Stepper::goMark()
+{
+	setAppCmd(GOMARK);
+}
+
+void L6470Stepper::resetPos()
+{
+	setAppCmd(RESETPOS);
+}
+
+void L6470Stepper::resetDevice()
+{
+	setAppCmd(RESETDEVICE);
+}
+
+void L6470Stepper::softStop()
+{
+	setAppCmd(SOFTSTOP);
+}
+
+void L6470Stepper::hardStop()
+{
+	setAppCmd(HARDSTOP);
+}
+
+void L6470Stepper::softHiZ()
+{
+	setAppCmd(SOFTHIZ);
+}
+
+void L6470Stepper::hardHiZ()
+{
+	setAppCmd(HARDHIZ);
+}
+
+
+void L6470Stepper::setAppCmd(AppCmdList app)
+{
+	for (int i=0; i<getDaisyChainNum(); i++)
+	{
+		_motor[i].setAction(app);
+	}
+	transferAction();
+}
 
 void	L6470Stepper::setRotate(motorDirection dir, int id, int rps)
 {
